@@ -1,0 +1,65 @@
+#!/usr/bin/env python3
+
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import scipy.interpolate
+
+# should you plot the results
+plot_results = True
+
+# postProcess folder
+cwd = 'postProcessing/line'
+if os.listdir(cwd) != []:
+    all_folders = os.listdir(cwd)
+else:
+    raise ValueError('{} is empty'.format(cwd))
+
+# get time vector
+time_vec = sorted(all_folders)
+
+# get names of the probes
+lines = []
+for filename in os.listdir(os.path.join(cwd, all_folders[0])):
+    if filename.endswith('alpha.water.xy'):
+        lines.append(filename.split('_')[0])
+if lines == []:
+    raise ValueError('expected *alpha_water.xy files, found none')
+
+# initialize data frame
+df = pd.DataFrame(index=time_vec, columns=lines)
+
+# extract interface at each time step for all line probes
+print('extracting alpha values for every line probe...')
+for br, folder in enumerate(os.listdir(cwd), 1):
+    print('time step: {} s, ({}/6000)'.format(folder, br))
+    folder_path = os.path.join(cwd, folder)
+    for filename in os.listdir(folder_path):
+        if filename.endswith('alpha.water.xy'):
+            probename = filename.split('_')[0]
+            alpha_water = pd.read_csv(os.path.join(folder_path, filename),
+                                      header=0, delimiter='\t')
+            depth = alpha_water.iloc[:, 0]
+            alpha = alpha_water.iloc[:, 1]
+            f = scipy.interpolate.interp1d(alpha, depth)
+            interface = np.asscalar(f(0.5))
+            df.at[folder, probename] = interface
+print('done.')
+
+# normalize the results
+df -= df.iloc[0, 0]
+
+# save results
+print('saving results to line_probes.csv')
+df.to_csv('line_probes.csv', sep='\t', index_label='time (s)')
+
+# plot all results
+if plot_results:
+    for line in df:
+        plt.figure()
+        df[line].plot()
+        plt.grid()
+        plt.ylim([-0.15, 0.15])
+        plt.title(line)
+
