@@ -1,6 +1,6 @@
 # OpenFOAM water level probes
 
-Python script for generating water-level time series data from VOF data at line probes (from *alpha.water.xy files).
+Python script for generating water-level time series data from VOF data at line probes computed by interFoam module in OpenFOAM (from *alpha.water.xy files).
 Water elevation is computed at each time step as the depth at which alpha=0.5.
 The results are writen to a .csv file with columns corresponding to line probes and rows corresponding to time steps.
 

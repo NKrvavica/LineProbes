@@ -6,9 +6,6 @@ import pandas as pd
 import scipy.interpolate
 #import matplotlib.pyplot as plt
 
-# should you plot the results
-plot_results = True
-
 # postProcess folder
 cwd = 'postProcessing/line'
 if os.listdir(cwd) != []:
@@ -55,10 +52,9 @@ print('saving results to line_probes.csv')
 df.to_csv('line_probes.csv', sep='\t', index_label='time (s)')
 
 ## plot all results
-#if plot_results:
-#    for line in df:
-#        plt.figure()
-#        df[line].plot()
-#        plt.grid()
-#        plt.ylim([-0.15, 0.15])
-#        plt.title(line)
+#for line in df:
+#    plt.figure()
+#    df[line].plot()
+#    plt.grid()
+#    plt.ylim([-0.15, 0.15])
+#    plt.title(line)
