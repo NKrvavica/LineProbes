@@ -15,6 +15,7 @@ else:
 
 # get time vector
 time_vec = sorted(all_folders)
+total_time_steps = len(time_vec)
 
 # get names of the probes
 lines = []
@@ -30,7 +31,7 @@ df = pd.DataFrame(index=time_vec, columns=lines)
 # extract interface at each time step for all line probes
 print('extracting alpha values for every line probe...')
 for br, folder in enumerate(os.listdir(cwd), 1):
-    print('time step: {} s, ({}/6000)'.format(folder, br))
+    print('time step: {} s, ({}/{})'.format(folder, br, total_time_steps))
     folder_path = os.path.join(cwd, folder)
     for filename in os.listdir(folder_path):
         if filename.endswith('alpha.water.xy'):
