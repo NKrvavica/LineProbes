@@ -4,7 +4,7 @@ import os
 import numpy as np
 import pandas as pd
 import scipy.interpolate
-#import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt
 
 # postProcess folder
 cwd = 'postProcessing/line'
@@ -14,7 +14,8 @@ else:
     raise ValueError('{} is empty'.format(cwd))
 
 # get time vector
-time_vec = sorted(all_folders)
+all_folders_num = [float(i) for i in all_folders]
+time_vec = sorted(all_folders_num)
 total_time_steps = len(time_vec)
 
 # get names of the probes
@@ -42,7 +43,7 @@ for br, folder in enumerate(os.listdir(cwd), 1):
             alpha = alpha_water.iloc[:, 1]
             f = scipy.interpolate.interp1d(alpha, depth)
             interface = np.asscalar(f(0.5))
-            df.at[folder, probename] = interface
+            df.at[float(folder), probename] = interface
 print('done.')
 
 # normalize the results
@@ -52,10 +53,10 @@ df -= df.iloc[0, 0]
 print('saving results to line_probes.csv')
 df.to_csv('line_probes.csv', sep='\t', index_label='time (s)')
 
-## plot all results
-#for line in df:
-#    plt.figure()
-#    df[line].plot()
-#    plt.grid()
-#    plt.ylim([-0.15, 0.15])
-#    plt.title(line)
+# plot all results
+for line in df:
+    plt.figure()
+    df[line].plot()
+    plt.grid()
+    plt.ylim([-0.15, 0.15])
+    plt.title(line)
