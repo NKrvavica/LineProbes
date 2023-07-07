@@ -6,12 +6,15 @@ import pandas as pd
 import scipy.interpolate
 import matplotlib.pyplot as plt
 
-# postProcess folder
-cwd = 'postProcessing/line'
-if os.listdir(cwd) != []:
-    all_folders = os.listdir(cwd)
+
+# modify names according to your situations
+input_name = "postProcessing/line"  # postProcess folder storing sampling of alpha.water
+save_name = "water_depth.csv"  # where you want to save the extracted water depth data
+
+if os.listdir(input_name) != []:
+    all_folders = os.listdir(input_name)
 else:
-    raise ValueError('{} is empty'.format(cwd))
+    raise ValueError("{} is empty".format(input_name))
 
 # get time vector
 all_folders_num = [float(i) for i in all_folders]
@@ -20,43 +23,54 @@ total_time_steps = len(time_vec)
 
 # get names of the probes
 lines = []
-for filename in os.listdir(os.path.join(cwd, all_folders[0])):
-    if filename.endswith('alpha.water.xy'):
-        lines.append(filename.split('_')[0])
+for filename in os.listdir(os.path.join(input_name, all_folders[0])):
+    if filename.endswith(
+        "alpha.water.xy"
+    ):  # make sure the setting of export format is "raw".
+        lines.append(filename.split("_")[0])
 if lines == []:
-    raise ValueError('expected *alpha_water.xy files, found none')
+    raise ValueError("expected *alpha_water.xy files, found none")
 
 # initialize data frame
 df = pd.DataFrame(index=time_vec, columns=lines)
-
+interface = 0.5  # how to determine interface between water and air
 # extract interface at each time step for all line probes
-print('extracting alpha values for every line probe...')
-for br, folder in enumerate(os.listdir(cwd), 1):
-    print('time step: {} s, ({}/{})'.format(folder, br, total_time_steps))
-    folder_path = os.path.join(cwd, folder)
+print("extracting alpha values for every line probe...")
+for br, folder in enumerate(os.listdir(input_name), 1):
+    print("time step: {} s, ({}/{})".format(folder, br, total_time_steps))
+    folder_path = os.path.join(input_name, folder)
     for filename in os.listdir(folder_path):
-        if filename.endswith('alpha.water.xy'):
-            probename = filename.split('_')[0]
-            alpha_water = pd.read_csv(os.path.join(folder_path, filename),
-                                      header=0, delimiter='\t')
+        if filename.endswith("alpha.water.xy"):
+            probe_name = filename.split("_")[0]
+            alpha_water = pd.read_csv(
+                os.path.join(folder_path, filename), header=0, delimiter="\t"
+            )
             depth = alpha_water.iloc[:, 0]
             alpha = alpha_water.iloc[:, 1]
-            f = scipy.interpolate.interp1d(alpha, depth)
-            interface = np.asscalar(f(0.5))
-            df.at[float(folder), probename] = interface
-print('done.')
-
-# normalize the results
-df -= df.iloc[0, 0]
+            if alpha.max() < interface:
+                # no water exist
+                waterDepth = 0.0
+            elif alpha.min() > interface:
+                # no free surface, pressurized flow
+                waterDepth = depth.iloc[-1]
+            else:
+                # free surface flow
+                f = scipy.interpolate.interp1d(alpha, depth)
+                waterDepth = f(interface).item()
+            df.at[float(folder), probe_name] = waterDepth
+print("done.")
 
 # save results
-print('saving results to line_probes.csv')
-df.to_csv('line_probes.csv', sep='\t', index_label='time (s)')
+print("saving results to %s" % (save_name))
+df.to_csv(save_name, sep="\t", index_label="time (s)")
 
 # plot all results
 for line in df:
     plt.figure()
-    df[line].plot()
+    df[line].plot(marker=".")
     plt.grid()
-    plt.ylim([-0.15, 0.15])
+    # plt.ylim([-0.15, 0.15])
     plt.title(line)
+    plt.xlabel("Time (s)")
+    plt.ylabel("Water depth (m)")
+plt.show()
